@@ -1,0 +1,34 @@
+= DevSecOps Example App
+v${project.version}
+ifdef::backend-pdf[]
+:title-logo-image: image:icf-logo.png[500, 500, align="center"]
+endif::backend-pdf[]
+
+ifdef::backend-html5[]
+image::icf-logo.png[ICF Logo, 150, 150, float="left"]
+endif::backend-html5[]
+
+== Overview
+
+This project demonstrates an automated process ...
+
+=== Product Links
+
+* https://maven.apache.org/[Apache Maven^]: Application build and packaging
+* https://aws.amazon.com/cloudformation/[AWS CloudFormation^]: Deployment orchestration
+
+=== Documentation Links
+////
+PDF Generation gives an error if you try to use icons
+////
+ifdef::backend-html5[]
+=== icon:file-pdf-o[] pass:[<a href="./raptor-devops.pdf" target="_blank">PDF Version</a>]
+=== icon:file-code-o[] https://github.com/ICFI/raptor-devops[Source^]
+endif::backend-html5[]
+ifdef::backend-pdf[]
+=== https://github.com/ICFI/raptor-devops[Source^]
+endif::backend-pdf[]
+
+=== Version
+
+This documentation was generated on ${build.timestamp} for project version ${project.version} from commit https://github.com/spohnan/lucee-eb-example/commit/${buildNumber}[${buildNumber}^].
