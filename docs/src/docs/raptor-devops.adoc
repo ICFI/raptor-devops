@@ -12,6 +12,17 @@ endif::backend-html5[]
 
 This project demonstrates an automated process ...
 
+== Building
+
+=== Prerequisite
+
+* http://www.oracle.com/technetwork/pt/java/javase/downloads/index.html[Java 8 JDK^]: Download from Oracle or
+    use a packaged version for your OS
+
+=== Steps
+
+. Execute the command `./mvnw verify` on Mac or Linux or `./mvnw.cmd verify` on Windows
+
 === Product Links
 
 * https://maven.apache.org/[Apache Maven^]: Application build and packaging
