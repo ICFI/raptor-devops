@@ -42,15 +42,28 @@ Python tool and can be installed using pip.
 
 ==== Steps
 
-. Install Make
+. Ensure that the `make` application has been installed on your system
+    ** If you don't want to use make it's just a convenience layer over a number of single line commands which could
+    certainly be called individually if desired.
 . Execute the `make init` target which will install virtualenv and initialize Python dependencies in an isolated environment
     for this project.
 . Activate the environment by running the command `source deploy/bin/activate`
 . Review the configuration settings in `cloudformation/config/dev` if different region and availability zones are desired
-. The commands to work with CloudFormation are now `make [create|update|delete]`
-. Updates to the template can be syntax checked with the command `make validate`
-. Once the stack has been launched the outputs can be retrieved with `make outputs` in our example you should you'll see
-    the version of the stack returned
+. The commands to work with CloudFormation are now `make [create|update|delete|outputs|validate]`
+    ** Updates to the template can be syntax checked with the command `make validate`
+. Once the stack has reached the CREATE_COMPLETE status the outputs can be retrieved with `make outputs`
+
+_Example `make outputs` display after stack creation with `make create` command_
+```shell
+$ make outputs
+- Description: The DNS name of the load balancer
+  OutputKey: LoadBalancerDNSName
+  OutputValue: rapto-LoadB-1T5ZNMXZZQVK9-1192740135.us-east-2.elb.amazonaws.com // <1>
+- Description: Stack version
+  OutputKey: Version
+  OutputValue: 0.0.1-SNAPSHOT
+```
+<1> Copy this into your web browser
 
 == Tools
 
