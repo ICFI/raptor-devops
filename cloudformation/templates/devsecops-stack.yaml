@@ -38,6 +38,8 @@ Parameters:
   AllowedIP:
     Description: The IP CIDR allowed to access the application
     Type: String
+  KeyPair:
+    Type: 'AWS::EC2::KeyPair::KeyName'
   Version:
     Description: Stack version
     Type: String
