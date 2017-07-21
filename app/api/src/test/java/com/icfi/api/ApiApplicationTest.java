@@ -21,7 +21,13 @@ public class ApiApplicationTest {
     private MockMvc mvc;
 
     @Test
-    public void listUsers() throws Exception {
+    public void testGreeting() throws Exception {
+        this.mvc.perform(get("/greet").accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testVersion() throws Exception {
         this.mvc.perform(get("/version").accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk());
     }

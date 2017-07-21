@@ -34,6 +34,14 @@ public class ApiApplication {
         }
     }
 
+    @RequestMapping(value = {"/greet"}, method = RequestMethod.GET)
+    public @ResponseBody
+    Map greet() {
+        return new HashMap<String, String>() {{
+            put("greeting", "Hello World");
+        }};
+    }
+
     @RequestMapping(value = {"/", "/version"}, method = RequestMethod.GET)
     public @ResponseBody
     Map version() {
