@@ -29,14 +29,27 @@ endif
 #
 # Check to ensure users have activated the python virtualenv before running sceptre commands
 #
-sceptre-exists: ; @which sceptre > /dev/null || echo "Run the following command to switch to deploy mode and then re-run your comand:\nsource packaging/deploy/bin/activate\n"
+sceptre-exists: ; @which sceptre > /dev/null || echo "Run the following command to switch to deploy mode and then re-run your comand:\nsource deploy/bin/activate\n"
 
 #
 # Pass all the common args to every sceptre call to simplify
 #
 SCEPTRE_ARGS := --var "version=$(VERSION)" --var "allowed_ip_cidr=$(ALLOWED_IP_CIDR)" --dir "cloudformation"
 
-.PHONY: init all clean docs project create update delete outputs validate
+.PHONY: help init all clean docs project create update delete outputs validate
+
+help:
+	@echo "\n--- Cloudformation orchestration targets ---"
+	@echo "init:        Run once after cloning the project to intialize the deployment toolchain"
+	@echo "create:      Create an application stack"
+	@echo "update:      Update an application stack"
+	@echo "delete:      Delete an application stack"
+	@echo "outputs:     Display the stack outputs like the address to the load balancer"
+	@echo "\n--- Development Targets ---"
+	@echo "all:         Build the application and documentation"
+	@echo "clean:       Remove all temporary build files"
+	@echo "docs:        Build just the documentation"
+	@echo "project:     Build just the project\n"
 
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,6 +80,8 @@ init:
 	pip install --upgrade virtualenv
 	virtualenv deploy
 	deploy/bin/pip install --upgrade sceptre awscli
+	@echo "\nVirtual environemnt with Sceptre and AWS CLI installed successfully!"
+	@echo "Run the command to activate: source deploy/bin/activate"
 
 #
 # Create an application stack
