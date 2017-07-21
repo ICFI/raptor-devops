@@ -22,6 +22,7 @@ This project demonstrates an automated process ...
 === Steps
 
 . Execute the command `./mvnw verify` on Mac or Linux or `./mvnw.cmd verify` on Windows
+    ** To build the documentation run with the docs profile activated ex: `./mvnw -P docs -pl docs package`
 
 === Product Links
 

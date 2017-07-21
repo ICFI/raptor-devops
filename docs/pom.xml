@@ -31,7 +31,6 @@
         <profile>
             <id>docs</id>
             <build>
-                <defaultGoal>package</defaultGoal>
                 <plugins>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
