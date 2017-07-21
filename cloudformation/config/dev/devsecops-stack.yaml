@@ -1,0 +1,4 @@
+template_path: templates/devsecops-stack.yaml
+parameters:
+  AvailabilityZones: us-east-1a,us-east-1b
+  Version: {{ var.version }}
