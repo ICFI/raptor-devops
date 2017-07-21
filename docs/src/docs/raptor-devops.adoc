@@ -1,4 +1,4 @@
-= DevSecOps Example App
+= DevSecOps Example
 v${project.version}
 ifdef::backend-pdf[]
 :title-logo-image: image:icf-logo.png[500, 500, align="center"]
@@ -10,7 +10,8 @@ endif::backend-html5[]
 
 == Overview
 
-This project demonstrates an automated process ...
+This project demonstrates an automated process to deploy a CI/CD environment with several project build quality and
+security tools incorporated.
 
 == Building
 
@@ -19,15 +20,54 @@ This project demonstrates an automated process ...
 * http://www.oracle.com/technetwork/pt/java/javase/downloads/index.html[Java 8 JDK^]: Download from Oracle or
     use a packaged version for your OS
 
-=== Steps
+=== Project
 
 . Execute the command `./mvnw verify` on Mac or Linux or `./mvnw.cmd verify` on Windows
     ** To build the documentation run with the docs profile activated ex: `./mvnw -P docs -pl docs package`
 
-=== Product Links
+== Deployment
 
-* https://maven.apache.org/[Apache Maven^]: Application build and packaging
-* https://aws.amazon.com/cloudformation/[AWS CloudFormation^]: Deployment orchestration
+=== Using Sceptre
+
+This is an optional tool to deploy the solution as the `cloudformation/templates/devsecops-stack.yaml` template
+can be uploaded directly to the CloudFormation console if desired. Sceptre makes deployments via the CLI much easier
+and is the recommended approach. To gather the needed information and pass arguments to the tool a Makefile has also
+been included at the root of the project so deployments can be as easy as `make [create|update|delete]` Sceptre is a
+Python tool and can be installed using pip.
+
+==== Prerequisite (recommended)
+
+. Python 2.7.x
+. Make
+
+==== Steps
+
+. Install Make
+. Execute the `make init` target which will install virtualenv and initialize Python dependencies in an isolated environment
+    for this project.
+. Activate the environment by running the command `source deploy/bin/activate`
+. Review the configuration settings in `cloudformation/config/dev` if different region and availability zones are desired
+. The commands to work with CloudFormation are now `make [create|update|delete]`
+. Updates to the template can be syntax checked with the command `make validate`
+. Once the stack has been launched the outputs can be retrieved with `make outputs` in our example you should you'll see
+    the version of the stack returned
+
+== Tools
+
+* Project Build and Packaging:
+    ** https://maven.apache.org/[Apache Maven^] is a software project management tool used to build and package the project
+*Application Platform:
+    ** https://aws.amazon.com/ecs/[AWS EC2 Container Service^] is a highly scalable, high performance container
+        management service that supports Docker containers and allows you to easily run applications on a managed
+        cluster of Amazon EC2 instances.
+* Deployment Orchestration
+    ** https://aws.amazon.com/cloudformation/[AWS CloudFormation^] gives developers and systems administrators an easy way to
+        create and manage a collection of related AWS resources, provisioning and updating them in an orderly and predictable
+        fashion.
+    ** https://sceptre.cloudreach.com[Sceptre^] is a tool to drive Cloudformation. Sceptre manages the creating, updating and
+        deletion of stacks, and provides meta commands to allow users to get information about their stacks.
+* Documentation:
+    ** http://asciidoctor.org[AsciiDoctor^] markup and transformation is used to create the documentation
 
 === Documentation Links
 ////

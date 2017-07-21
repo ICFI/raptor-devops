@@ -1,4 +1,6 @@
 template_path: templates/devsecops-stack.yaml
 parameters:
   AvailabilityZones: us-east-1a,us-east-1b
+  AllowedIP: {{ var.allowed_ip_cidr }}
+  KeyPair: icf.com
   Version: {{ var.version }}

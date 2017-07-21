@@ -25,6 +25,19 @@ Parameters:
     Default: 10.0.0.0/16
     Description: CIDR block for the VPC
     Type: String
+  InstanceType:
+    Description: EC2 instance type
+    Default: t2.small
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m4.large
+      - m4.xlarge
+    Type: String
+  AllowedIP:
+    Description: The IP CIDR allowed to access the application
+    Type: String
   Version:
     Description: Stack version
     Type: String
@@ -32,7 +45,19 @@ Conditions:
   NVirginiaRegionCondition: !Equals
     - !Ref 'AWS::Region'
     - us-east-1
+Mappings:
+  RegionAmazonECSOptimizedAMIMapping:
+    us-east-1:
+      AMI: ami-04351e12
+    us-east-2:
+      AMI: ami-207b5a45
+    us-west-1:
+      AMI: ami-7d664a1d
+    us-west-2:
+      AMI: ami-ff15039b
 Resources:
+  # --- VPC Section ---
+
   DHCPOptions:
     Type: 'AWS::EC2::DHCPOptions'
     Properties:
@@ -125,3 +150,175 @@ Resources:
     Properties:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicSubnetRouteTable
+
+  # --- ECS Section ---
+
+  ECSCluster:
+      Type: 'AWS::ECS::Cluster'
+  ECSAutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchConfigurationName: !Ref ECSLaunchConfig
+      DesiredCapacity: 2
+      MinSize: 2
+      MaxSize: 2
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Ref 'AWS::StackName'
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '1'
+        MinInstancesInService: '1'
+        PauseTime: PT5M
+        WaitOnResourceSignals: 'true'
+  ECSLaunchConfig:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      AssociatePublicIpAddress: true
+      IamInstanceProfile: !Ref ECSInstanceProfile
+      ImageId: !FindInMap [ RegionAmazonECSOptimizedAMIMapping, !Ref 'AWS::Region', AMI ]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair # TODO: Remove me
+      SecurityGroups:
+        - !Ref ECSClusterSecurityGroup
+        - !Ref ECSContainerInstancesSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -ex
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ECSLaunchConfig --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            '/etc/ecs/ecs.config':
+              content: !Sub |
+                ECS_CLUSTER=${ECSCluster}
+  ECSClusterSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Security group to allow all traffic between ECS instances and ELB
+  ECSClusterSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    Properties:
+      DestinationSecurityGroupId: !Ref ECSClusterSecurityGroup
+      FromPort: '-1'
+      GroupId: !Ref ECSClusterSecurityGroup
+      IpProtocol: '-1'
+      ToPort: '-1'
+  ECSClusterSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      FromPort: '-1'
+      GroupId: !Ref ECSClusterSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref ECSClusterSecurityGroup
+      ToPort: '-1'
+  ECSContainerInstancesSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Security group for ECS container instances
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref AllowedIP
+  ECSInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref ECSInstanceRole
+  ECSInstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: AmazonEC2ContainerServiceforEC2Role
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:CreateCluster'
+                  - 'ecs:DeregisterContainerInstance'
+                  - 'ecs:DiscoverPollEndpoint'
+                  - 'ecs:Poll'
+                  - 'ecs:RegisterContainerInstance'
+                  - 'ecs:StartTelemetrySession'
+                  - 'ecs:Submit*'
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+        - PolicyName: AmazonEC2ContainerServiceJenkinsPluginRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:DescribeContainerInstances'
+                  - 'ecs:ListClusters'
+                  - 'ecs:RegisterTaskDefinition'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ecs:RunTask'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/jenkins-slave:*'
+              - Effect: Allow
+                Action:
+                  - 'ecs:ListContainerInstances'
+                  - 'ecs:StopTask'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSCluster}'
+              - Effect: Allow
+                Action:
+                  - 'ecs:StopTask'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/*'
+  ECSServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: AmazonEC2ContainerServiceRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:AuthorizeSecurityGroupIngress'
+                  - 'ec2:Describe*'
+                  - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+                  - 'elasticloadbalancing:Describe*'
+                  - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+                Resource: '*'
+Outputs:
+  Version:
+    Value: !Ref Version
+    Description: Stack version
