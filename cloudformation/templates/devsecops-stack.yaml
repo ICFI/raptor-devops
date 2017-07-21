@@ -58,6 +58,7 @@ Mappings:
     us-west-2:
       AMI: ami-ff15039b
 Resources:
+
   # --- VPC Section ---
 
   DHCPOptions:
@@ -297,30 +298,119 @@ Resources:
                   - 'ecs:StopTask'
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/*'
   ECSServiceRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
+        - Effect: Allow
+          Principal:
+            Service:
+              - 'ecs.amazonaws.com'
+          Action:
+            - 'sts:AssumeRole'
       Path: /
       Policies:
-        - PolicyName: AmazonEC2ContainerServiceRole
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'ec2:AuthorizeSecurityGroupIngress'
-                  - 'ec2:Describe*'
-                  - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
-                  - 'elasticloadbalancing:Describe*'
-                  - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
-                Resource: '*'
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+              - 'elasticloadbalancing:DeregisterTargets'
+              - 'elasticloadbalancing:Describe*'
+              - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+              - 'elasticloadbalancing:RegisterTargets'
+              - 'ec2:Describe*'
+              - 'ec2:AuthorizeSecurityGroupIngress'
+            Resource: '*'
+  CloudwatchLogsGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
+      RetentionInDays: 7
+
+  # --- Jenkins Section ---
+
+  EcsSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Web access to load balancer
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: !Ref AllowedIP
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Scheme: internet-facing
+      Subnets:
+        - !Ref 'PublicSubnet1'
+        - !Ref 'PublicSubnet2'
+      SecurityGroups:
+        - !Ref 'EcsSecurityGroup'
+        - !Ref 'ECSClusterSecurityGroup'
+  ALBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    DependsOn: LoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPC
+  ALBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: ECSServiceRole
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '80'
+      Protocol: HTTP
+  JenkinsTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: !Join ['', [!Ref 'AWS::StackName', -jenkins]]
+      ContainerDefinitions:
+        - Name: jenkins
+          Cpu: '50'
+          Image: 'jenkins:latest'
+          Memory: '500'
+          Environment:
+            - Name: JAVA_OPTS
+              Value: '-Djenkins.install.runSetupWizard=false'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref 'CloudwatchLogsGroup'
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'jenkins'
+          PortMappings:
+            - ContainerPort: 8080
+  JenkinsService:
+    Type: 'AWS::ECS::Service'
+    DependsOn: ALBListener
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LoadBalancers:
+      - ContainerName: jenkins
+        ContainerPort: 8080
+        TargetGroupArn: !Ref ALBTargetGroup
+      Role: !Ref ECSServiceRole
+      TaskDefinition: !Ref JenkinsTaskDefinition
+
 Outputs:
+  LoadBalancerDNSName:
+    Value: !GetAtt LoadBalancer.DNSName
+    Description: The DNS name of the load balancer
   Version:
     Value: !Ref Version
     Description: Stack version
