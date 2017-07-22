@@ -35,9 +35,11 @@ and is the recommended approach. To gather the needed information and pass argum
 been included at the root of the project so deployments can be as easy as `make [create|update|delete]` Sceptre is a
 Python tool and can be installed using pip.
 
-==== Prerequisite (recommended)
+==== Prerequisites (recommended)
 
 . Python 2.7.x
+. AWS CLI (http://docs.aws.amazon.com/cli/latest/userguide/installing.html[install] and
+http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[configuration] instructions)
 . Make
 
 ==== Steps
@@ -64,6 +66,12 @@ $ make outputs
   OutputValue: 0.0.1-SNAPSHOT
 ```
 <1> Copy this into your web browser
+
+== Container Images
+
+=== jenkins-ecs
+
+=== jenkins-demo
 
 == Tools
 
