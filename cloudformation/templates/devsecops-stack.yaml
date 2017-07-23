@@ -3,7 +3,7 @@ Description: This template creates a simplie multi-az VPC with all public subnet
 Parameters:
   AvailabilityZones:
     Description: List of Availability Zones to use for the subnets in the VPC
-    Type: CommaDelimitedList
+    Type: List<AWS::EC2::AvailabilityZone::Name>
   PublicSubnet1CIDR:
     AllowedPattern: >-
       ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
@@ -59,7 +59,7 @@ Mappings:
       AMI: ami-ff15039b
 Resources:
 
-  # --- VPC Section ---
+  # --- VPC ---
 
   DHCPOptions:
     Type: 'AWS::EC2::DHCPOptions'
@@ -151,14 +151,14 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicSubnetRouteTable
 
-  # --- ECS Section ---
+  # --- ECS ---
 
-  ECSCluster:
+  EcsCluster:
       Type: 'AWS::ECS::Cluster'
-  ECSAutoScalingGroup:
+  EcsAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      LaunchConfigurationName: !Ref ECSLaunchConfig
+      LaunchConfigurationName: !Ref EcsLaunchConfig
       DesiredCapacity: 2
       MinSize: 2
       MaxSize: 2
@@ -178,53 +178,58 @@ Resources:
         MinInstancesInService: '1'
         PauseTime: PT5M
         WaitOnResourceSignals: 'true'
-  ECSLaunchConfig:
+  EcsLaunchConfig:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Properties:
       AssociatePublicIpAddress: true
-      IamInstanceProfile: !Ref ECSInstanceProfile
+      IamInstanceProfile: !Ref EcsInstanceProfile
       ImageId: !FindInMap [ RegionAmazonECSOptimizedAMIMapping, !Ref 'AWS::Region', AMI ]
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyPair # TODO: Remove me
       SecurityGroups:
-        - !Ref ECSClusterSecurityGroup
-        - !Ref ECSContainerInstancesSecurityGroup
+        - !Ref EcsClusterSecurityGroup
+        - !Ref EcsContainerInstancesSecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           set -ex
           yum install -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ECSLaunchConfig --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EcsLaunchConfig --region ${AWS::Region}
+          mkdir -p /mnt/storage
+          echo "${EfsFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /mnt/storage nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0" >> /etc/fstab
+          echo 'waiting for efs filesystem '
+          until host ${EfsFileSystem}.efs.${AWS::Region}.amazonaws.com; do
+              printf '.'
+              sleep 5
+          done
+          mount -a
+          [ ! -d /mnt/storage/jenkins ] && mkdir /mnt/storage/jenkins
+          chown -R 1000:1000 /mnt/storage/jenkins
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EcsAutoScalingGroup --region ${AWS::Region}
     Metadata:
       'AWS::CloudFormation::Init':
         config:
           files:
             '/etc/ecs/ecs.config':
-              content: !Sub |
-                ECS_CLUSTER=${ECSCluster}
-  ECSClusterSecurityGroup:
+              content: !Sub 'ECS_CLUSTER=${EcsCluster}'
+          packages:
+            yum:
+              nfs-utils: []
+              bind-utils: []
+  EcsClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
       GroupDescription: Security group to allow all traffic between ECS instances and ELB
-  ECSClusterSecurityGroupEgress:
-    Type: 'AWS::EC2::SecurityGroupEgress'
-    Properties:
-      DestinationSecurityGroupId: !Ref ECSClusterSecurityGroup
-      FromPort: '-1'
-      GroupId: !Ref ECSClusterSecurityGroup
-      IpProtocol: '-1'
-      ToPort: '-1'
-  ECSClusterSecurityGroupIngress:
+  EcsClusterSecurityGroupIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
       FromPort: '-1'
-      GroupId: !Ref ECSClusterSecurityGroup
+      GroupId: !Ref EcsClusterSecurityGroup
       IpProtocol: '-1'
-      SourceSecurityGroupId: !Ref ECSClusterSecurityGroup
+      SourceSecurityGroupId: !Ref EcsClusterSecurityGroup
       ToPort: '-1'
-  ECSContainerInstancesSecurityGroup:
+  EcsContainerInstancesSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
@@ -234,74 +239,47 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: !Ref AllowedIP
-  ECSInstanceProfile:
+  EcsInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
       Path: /
       Roles:
-        - !Ref ECSInstanceRole
-  ECSInstanceRole:
+        - !Ref EcsInstanceRole
+  EcsInstanceRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role'
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
             Principal:
               Service:
                 - ec2.amazonaws.com
+                - ecs-tasks.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Path: /
       Policies:
-        - PolicyName: AmazonEC2ContainerServiceforEC2Role
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'ecs:CreateCluster'
-                  - 'ecs:DeregisterContainerInstance'
-                  - 'ecs:DiscoverPollEndpoint'
-                  - 'ecs:Poll'
-                  - 'ecs:RegisterContainerInstance'
-                  - 'ecs:StartTelemetrySession'
-                  - 'ecs:Submit*'
-                  - 'ecs:ListTaskDefinitions'
-                  - 'ecr:GetAuthorizationToken'
-                  - 'ecr:GetDownloadUrlForLayer'
-                  - 'ecr:BatchGetImage'
-                  - 'ecr:BatchCheckLayerAvailability'
-                  - 'ecr:PutImage'
-                  - 'ecr:InitiateLayerUpload'
-                  - 'ecr:UploadLayerPart'
-                  - 'ecr:CompleteLayerUpload'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: '*'
         - PolicyName: AmazonEC2ContainerServiceJenkinsPluginRole
           PolicyDocument:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'ecs:DescribeContainerInstances'
-                  - 'ecs:ListClusters'
                   - 'ecs:RegisterTaskDefinition'
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - 'ecs:RunTask'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/jenkins-slave:*'
-              - Effect: Allow
-                Action:
+                  - 'ecs:ListClusters'
                   - 'ecs:ListContainerInstances'
+                  - 'ecs:DescribeContainerInstances'
+                  - 'ecs:ListTaskDefinitions'
+                  - 'ecs:DescribeTaskDefinition'
+                  - 'ecs:DescribeTasks'
+                  - 'ecs:RunTask'
                   - 'ecs:StopTask'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSCluster}'
-              - Effect: Allow
-                Action:
-                  - 'ecs:StopTask'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/*'
-  ECSServiceRole:
-    Type: AWS::IAM::Role
+                Resource: '*'
+  EcsServiceRole:
+    Type: 'AWS::IAM::Role'
     Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
@@ -310,33 +288,52 @@ Resources:
               - 'ecs.amazonaws.com'
           Action:
             - 'sts:AssumeRole'
-      Path: /
-      Policies:
-      - PolicyName: ecs-service
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-              - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
-              - 'elasticloadbalancing:DeregisterTargets'
-              - 'elasticloadbalancing:Describe*'
-              - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
-              - 'elasticloadbalancing:RegisterTargets'
-              - 'ec2:Describe*'
-              - 'ec2:AuthorizeSecurityGroupIngress'
-            Resource: '*'
   CloudwatchLogsGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
       RetentionInDays: 7
 
-  # --- ECR Section ---
+  # --- EFS ---
+
+  EfsFileSystem:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+        - Key: Name
+          Value: !Ref EcsCluster
+      PerformanceMode: generalPurpose
+  EfsMountTarget1:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EfsFileSystem
+      SecurityGroups:
+        - !Ref EfsMountTargetSecurityGroup
+      SubnetId: !Ref PublicSubnet1
+  EfsMountTarget2:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EfsFileSystem
+      SecurityGroups:
+        - !Ref EfsMountTargetSecurityGroup
+      SubnetId: !Ref PublicSubnet2
+  EfsMountTargetSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow inbound NFS for EFS mount target from ECS container instances
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '2049'
+          ToPort: '2049'
+          SourceSecurityGroupId: !Ref EcsContainerInstancesSecurityGroup
+
+  # --- ECR ---
 
   ContainerRegistry:
-    Type: "AWS::ECR::Repository"
+    Type: 'AWS::ECR::Repository'
 
-  # --- Load Balancer Section ---
+  # --- Load Balancer ---
 
   EcsSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -357,19 +354,19 @@ Resources:
         - !Ref 'PublicSubnet2'
       SecurityGroups:
         - !Ref 'EcsSecurityGroup'
-        - !Ref 'ECSClusterSecurityGroup'
+        - !Ref 'EcsClusterSecurityGroup'
   LbJenkinsTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     DependsOn: LoadBalancer
     Properties:
-      HealthCheckPath: '/jenkins/'
+      HealthCheckPath: '/'
       HealthCheckIntervalSeconds: 10
       Port: 80
       Protocol: HTTP
       VpcId: !Ref VPC
-  LbListener:
+  LbListenerHTTP:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    DependsOn: ECSServiceRole
+    DependsOn: EcsServiceRole
     Properties:
       DefaultActions:
       - Type: forward
@@ -377,22 +374,18 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
-  JenkinsListenerRule:
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+  LbListenerJenkinsWorker:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: EcsServiceRole
     Properties:
-      Actions:
+      DefaultActions:
       - Type: forward
-        TargetGroupArn:
-          Ref: LbJenkinsTargetGroup
-      Conditions:
-      - Field: path-pattern
-        Values:
-        - '/jenkins/*'
-      ListenerArn:
-        Ref: LbListener
-      Priority: 1
+        TargetGroupArn: !Ref LbJenkinsTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 50000
+      Protocol: HTTP
 
-  # --- Jenkins Section ---
+  # --- Jenkins ---
 
   JenkinsTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -401,34 +394,44 @@ Resources:
       ContainerDefinitions:
         - Name: jenkins
           Cpu: '100'
-          Image: 'spohnan/jenkins-demo:latest'
-          Memory: '4000'
+          Image: 'spohnan/jenkins-ecs:latest'
+          Memory: '2048'
           Environment:
             - Name: JAVA_OPTS
               Value: '-Djenkins.install.runSetupWizard=false'
-            - Name: JENKINS_OPTS
-              Value: '--prefix=/jenkins'
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref 'CloudwatchLogsGroup'
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: 'jenkins'
-#          Command:
-#            - '/usr/local/bin/install-plugins.sh docker-slaves github-branch-source:1.8'
           PortMappings:
             - ContainerPort: 8080
+            - ContainerPort: 50000
+          Privileged: true
+          MountPoints:
+            - ContainerPath: '/var/jenkins_home'
+              SourceVolume: 'jenkins-storage'
+            - ContainerPath: '/var/run/docker.sock'
+              SourceVolume: 'docker-sock'
+      Volumes:
+        - Name: 'jenkins-storage'
+          Host:
+            SourcePath: '/mnt/storage/jenkins'
+        - Name: 'docker-sock'
+          Host:
+            SourcePath: '/var/run/docker.sock'
   JenkinsService:
     Type: 'AWS::ECS::Service'
-    DependsOn: LbListener
+    DependsOn: LbListenerHTTP
     Properties:
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref EcsCluster
       DesiredCount: 1
       LoadBalancers:
       - ContainerName: jenkins
         ContainerPort: 8080
         TargetGroupArn: !Ref LbJenkinsTargetGroup
-      Role: !Ref ECSServiceRole
+      Role: !Ref EcsServiceRole
       TaskDefinition: !Ref JenkinsTaskDefinition
 
 Outputs:

@@ -1,0 +1,14 @@
+node {
+    stage('checkout') {
+        git 'https://github.com/ICFI/raptor-devops.git'
+    }
+    stage('build') {
+        sh './mvnw -pl app/api verify'
+    }
+    stage('artifacts') {
+        junit 'app/api/target/surefire-reports/**/*.xml'
+    }
+    stage('docker build') {
+        def image = docker.build('raptor/api', 'app/api')
+    }
+}
