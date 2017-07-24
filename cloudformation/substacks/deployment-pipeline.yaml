@@ -149,7 +149,9 @@ Resources:
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
             build:
               commands:
-                - docker build --tag "${REPOSITORY_URI}:${TAG}" .
+                - docker run --rm -v "$(pwd)":/tmp/api -w /tmp/api maven:3.5-jdk-8 mvn -pl app/api verify
+                - docker build -t api app/api
+                - docker tag api:latest "${REPOSITORY_URI}:${TAG}"
             post_build:
               commands:
                 - docker push "${REPOSITORY_URI}:${TAG}"

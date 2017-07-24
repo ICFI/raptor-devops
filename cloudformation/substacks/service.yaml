@@ -41,41 +41,17 @@ Resources:
       DesiredCount: !Ref DesiredCount
       TaskDefinition: !Ref TaskDefinition
       LoadBalancers:
-        - ContainerName: simple-app
-          ContainerPort: 80
+        - ContainerName: api
+          ContainerPort: 8080
           TargetGroupArn: !Ref TargetGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub ${AWS::StackName}-simple-app
+      Family: !Sub ${AWS::StackName}-api
       ContainerDefinitions:
-        - Name: simple-app
+        - Name: api
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
-          EntryPoint:
-            - /usr/sbin/apache2
-            - -D
-            - FOREGROUND
-          Essential: true
-          Memory: 128
-          MountPoints:
-            - SourceVolume: my-vol
-              ContainerPath: /var/www/my-vol
+          Memory: '1024'
           PortMappings:
-            - ContainerPort: 80
-          Environment:
-            - Name: Tag
-              Value: !Ref Tag
-        - Name: busybox
-          Image: busybox
-          EntryPoint:
-            - sh
-            - -c
-          Essential: false
-          Memory: 128
-          VolumesFrom:
-            - SourceContainer: simple-app
-          Command:
-            - /bin/sh -c "while true; do /bin/date > /var/www/my-vol/date; sleep 1; done"
-      Volumes:
-        - Name: my-vol
+            - ContainerPort: 8080

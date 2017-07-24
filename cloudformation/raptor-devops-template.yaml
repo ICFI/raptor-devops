@@ -3,7 +3,6 @@ Description: >
   achieve continuous deployment of source code from a GitHub repository via a
   Docker container to an Amazon EC2 Container Service cluster.
 
-
 Parameters:
   GitHubUser:
     Type: String
@@ -11,7 +10,7 @@ Parameters:
 
   GitHubRepo:
     Type: String
-    Default: ecs-demo-php-simple-app
+    Default: raptor-devops
     Description: The repo name of the sample service.
 
   GitHubBranch:
@@ -23,7 +22,6 @@ Parameters:
     Type: String
     Description: >
       Token for the user specified above. (https://github.com/settings/tokens)
-
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -45,12 +43,11 @@ Metadata:
           - GitHubUser
           - GitHubToken
 
-
 Resources:
   Cluster:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment/templates/ecs-cluster.yaml
+      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/ecs-cluster.yaml
       Parameters:
         SourceSecurityGroup: !GetAtt LoadBalancer.Outputs.SecurityGroup
         Subnets: !GetAtt VPC.Outputs.Subnets
@@ -59,7 +56,7 @@ Resources:
   DeploymentPipeline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment/templates/deployment-pipeline.yaml
+      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/deployment-pipeline.yaml
       Parameters:
         Cluster: !GetAtt Cluster.Outputs.ClusterName
         GitHubUser: !Ref GitHubUser
@@ -67,12 +64,12 @@ Resources:
         GitHubRepo: !Ref GitHubRepo
         GitHubBranch: !Ref GitHubBranch
         TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
-        TemplateBucket: !Sub ecs-refarch-continuous-deployment-${AWS::Region}
+        TemplateBucket: !Sub raptor-devops-deployment-${AWS::Region}
 
   LoadBalancer:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment/templates/load-balancer.yaml
+      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/load-balancer.yaml
       Parameters:
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
@@ -80,13 +77,12 @@ Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment/templates/vpc.yaml
+      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/vpc.yaml
       Parameters:
         Name: !Ref AWS::StackName
         VpcCIDR: 10.215.0.0/16
         Subnet1CIDR: 10.215.10.0/24
         Subnet2CIDR: 10.215.20.0/24
-
 
 Outputs:
   ServiceUrl:
