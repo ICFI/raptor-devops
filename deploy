@@ -40,3 +40,6 @@ do
     --region "$region"
 done
 rm -rf "$BUILD_DIR"
+
+./mvnw -P docs -pl docs package
+aws s3 sync docs/target/generated-docs/ s3://raptor-devops-deployment-us-east-2/docs/ --only-show-errors --delete
