@@ -100,6 +100,8 @@ update: sceptre-exists
 #
 delete: sceptre-exists
 	@sceptre $(SCEPTRE_ARGS) delete-stack $(ENV) $(TEMPLATE_NAME)
+	@echo "EC2 Container Registry"
+	@aws ecr delete-repository --force --repository-name api-raptor-devops-dev-devsecops-stack
 
 #
 # Get the outputs from the stack. The BeanstalkEndpointURL contains the URL to the load balancer

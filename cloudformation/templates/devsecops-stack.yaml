@@ -250,6 +250,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role'
+        - 'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser'
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -330,8 +331,11 @@ Resources:
 
   # --- ECR ---
 
-  ContainerRegistry:
+  ApiContainerRegistry:
     Type: 'AWS::ECR::Repository'
+    DeletionPolicy: 'Retain'
+    Properties:
+      RepositoryName: !Sub 'api-${AWS::StackName}'
 
   # --- Load Balancer ---
 
@@ -355,15 +359,6 @@ Resources:
       SecurityGroups:
         - !Ref 'EcsSecurityGroup'
         - !Ref 'EcsClusterSecurityGroup'
-  LbJenkinsTargetGroup:
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    DependsOn: LoadBalancer
-    Properties:
-      HealthCheckPath: '/'
-      HealthCheckIntervalSeconds: 10
-      Port: 80
-      Protocol: HTTP
-      VpcId: !Ref VPC
   LbListenerHTTP:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     DependsOn: EcsServiceRole
@@ -374,7 +369,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
-  LbListenerJenkinsWorker:
+  LbListenerWorker:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     DependsOn: EcsServiceRole
     Properties:
@@ -384,6 +379,61 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 50000
       Protocol: HTTP
+
+  # --- api ---
+
+#  ApiService:
+#    Type: 'AWS::ECS::Service'
+#    DependsOn: ApiListenerRule
+#    Properties:
+#      Cluster: !Ref EcsCluster
+#      DesiredCount: 1
+#      Role: !Ref EcsServiceRole
+#      TaskDefinition: !Ref ApiTaskDefinition
+#      LoadBalancers:
+#        - ContainerName: api
+#          ContainerPort: 8080
+#          TargetGroupArn: !Ref LbApiTargetGroup
+  ApiTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: !Join ['', [!Ref 'AWS::StackName', -api]]
+      ContainerDefinitions:
+        - Name: api
+          Cpu: '100'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApiContainerRegistry}:latest'
+          Memory: '1024'
+          Environment:
+            - Name: 'SERVER_CONTEXT_PATH'
+              Value: '/api'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref 'CloudwatchLogsGroup'
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'api'
+          PortMappings:
+            - ContainerPort: 8080
+  LbApiTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckPath: '/api'
+      HealthCheckIntervalSeconds: 10
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VPC
+  ApiListenerRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      ListenerArn: !Ref LbListenerHTTP
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values:
+          - '/api/*'
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref LbApiTargetGroup
 
   # --- Jenkins ---
 
@@ -423,7 +473,6 @@ Resources:
             SourcePath: '/var/run/docker.sock'
   JenkinsService:
     Type: 'AWS::ECS::Service'
-    DependsOn: LbListenerHTTP
     Properties:
       Cluster: !Ref EcsCluster
       DesiredCount: 1
@@ -433,11 +482,23 @@ Resources:
         TargetGroupArn: !Ref LbJenkinsTargetGroup
       Role: !Ref EcsServiceRole
       TaskDefinition: !Ref JenkinsTaskDefinition
+  LbJenkinsTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    DependsOn: LoadBalancer
+    Properties:
+      HealthCheckPath: '/'
+      HealthCheckIntervalSeconds: 10
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VPC
 
 Outputs:
   LoadBalancerDNSName:
     Value: !GetAtt LoadBalancer.DNSName
     Description: The DNS name of the load balancer
+  ApiContainerImage:
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApiContainerRegistry}:latest'
+    Description: Name of the API container
   Version:
     Value: !Ref Version
     Description: Stack version
