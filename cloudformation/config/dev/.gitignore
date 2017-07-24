@@ -1,0 +1,2 @@
+# Don't check in config file with API token
+devsecops-stack.yaml
