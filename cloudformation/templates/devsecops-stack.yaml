@@ -27,7 +27,7 @@ Parameters:
     Type: String
   InstanceType:
     Description: EC2 instance type
-    Default: t2.large
+    Default: t2.medium
     AllowedValues:
       - t2.small
       - t2.medium
@@ -404,8 +404,8 @@ Resources:
           Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApiContainerRegistry}:latest'
           Memory: '1024'
           Environment:
-            - Name: 'SERVER_CONTEXT_PATH'
-              Value: '/api'
+            - Name: 'JAVA_OPTS'
+              Value: '-DSERVER_CONTEXT_PATH=/api'
           LogConfiguration:
             LogDriver: awslogs
             Options:
