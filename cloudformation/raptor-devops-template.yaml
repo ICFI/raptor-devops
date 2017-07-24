@@ -1,7 +1,6 @@
 Description: >
-  This template illustrates how to use AWS CodeBuild and AWS CodePipeline to
-  achieve continuous deployment of source code from a GitHub repository via a
-  Docker container to an Amazon EC2 Container Service cluster.
+  GitHub to AWS CodeBuild and AWS CodePipeline for continuous deployment of source code
+  from a GitHub repository via a Docker container to an Amazon EC2 Container Service cluster
 
 Parameters:
   GitHubUser:
@@ -20,6 +19,7 @@ Parameters:
 
   GitHubToken:
     Type: String
+    NoEcho: true
     Description: >
       Token for the user specified above. (https://github.com/settings/tokens)
 
@@ -47,7 +47,7 @@ Resources:
   Cluster:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/ecs-cluster.yaml
+      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/ecs-cluster.yaml
       Parameters:
         SourceSecurityGroup: !GetAtt LoadBalancer.Outputs.SecurityGroup
         Subnets: !GetAtt VPC.Outputs.Subnets
@@ -56,7 +56,7 @@ Resources:
   DeploymentPipeline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/deployment-pipeline.yaml
+      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/deployment-pipeline.yaml
       Parameters:
         Cluster: !GetAtt Cluster.Outputs.ClusterName
         GitHubUser: !Ref GitHubUser
@@ -69,7 +69,7 @@ Resources:
   LoadBalancer:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/load-balancer.yaml
+      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/load-balancer.yaml
       Parameters:
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
@@ -77,7 +77,7 @@ Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/raptor-devops-deployment/templates/vpc.yaml
+      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/vpc.yaml
       Parameters:
         Name: !Ref AWS::StackName
         VpcCIDR: 10.215.0.0/16
@@ -87,7 +87,7 @@ Resources:
 Outputs:
   ServiceUrl:
     Description: The sample service that is being continuously deployed.
-    Value: !GetAtt LoadBalancer.Outputs.ServiceUrl
+    Value: !Sub ${LoadBalancer.Outputs.ServiceUrl}/greet
 
   PipelineUrl:
     Description: The continuous deployment pipeline in the AWS Management Console.
