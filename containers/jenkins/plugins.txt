@@ -1,6 +1,0 @@
-amazon-ecr
-amazon-ecs
-docker-build-publish
-git
-workflow-aggregator
-pipeline-maven

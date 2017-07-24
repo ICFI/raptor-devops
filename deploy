@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -o errexit -o xtrace
+
+bucket=raptor-devops-deployment
+regions=(
+  us-east-1
+  us-east-2
+  us-west-2
+)
+
+BUILD_DIR=build
+
+[ -d "$BUILD_DIR" ] && rm -rf "$BUILD_DIR"
+mkdir "$BUILD_DIR"
+
+zip -j "$BUILD_DIR"/templates.zip cloudformation/raptor-devops-template.yaml cloudformation/substacks/*
+
+for region in "${regions[@]}"
+do
+  aws s3api head-bucket --bucket "${bucket}-${region}" --region "$region" ||
+    aws s3 mb "s3://${bucket}-${region}" --region "$region"
+
+  aws s3api put-bucket-policy \
+    --bucket "${bucket}-${region}" \
+    --policy "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:GetObject\",\"s3:GetObjectVersion\"],\"Resource\":\"arn:aws:s3:::raptor-devops-deployment-${region}/*\"},{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":[\"s3:ListBucket\",\"s3:GetBucketVersioning\"],\"Resource\":\"arn:aws:s3:::raptor-devops-deployment-${region}\"}]}" \
+    --region "$region"
+
+  aws s3api put-bucket-versioning \
+    --bucket "${bucket}-${region}" \
+    --versioning-configuration Status=Enabled \
+    --region "$region"
+
+  aws s3 cp "$BUILD_DIR"/templates.zip "s3://${bucket}-${region}" --region "$region"
+
+  aws s3 cp cloudformation/raptor-devops-template.yaml "s3://${bucket}-${region}" \
+    --region "$region"
+
+  aws s3 cp --recursive cloudformation/substacks/ "s3://${bucket}-${region}/templates" \
+    --region "$region"
+done
+rm -rf "$BUILD_DIR"
