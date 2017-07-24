@@ -234,7 +234,7 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 StackName: !Sub "${AWS::StackName}-Service"
                 Capabilities: CAPABILITY_NAMED_IAM
-                TemplatePath: Template::templates/service.yaml
+                TemplatePath: Template::service.yaml
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub |
                   {
