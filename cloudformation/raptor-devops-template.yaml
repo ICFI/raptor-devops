@@ -85,10 +85,14 @@ Resources:
         Subnet2CIDR: 10.215.20.0/24
 
 Outputs:
-  ServiceUrl:
-    Description: The sample service that is being continuously deployed.
+  GreetingUrl:
+    Description: Greeting endpoint
     Value: !Sub ${LoadBalancer.Outputs.ServiceUrl}/greet
 
+  VersionUrl:
+      Description: Greeting endpoint
+      Value: !Sub ${LoadBalancer.Outputs.ServiceUrl}/version
+
   PipelineUrl:
-    Description: The continuous deployment pipeline in the AWS Management Console.
+    Description: The continuous deployment pipeline in the AWS Management Console
     Value: !GetAtt DeploymentPipeline.Outputs.PipelineUrl
