@@ -8,7 +8,7 @@ production in response to code updates.
 ### Documentation
 
 The [instructions and extended documentation](https://s3.us-east-2.amazonaws.com/raptor-devops-deployment-us-east-2/docs/index.html) 
-of the solution lists the steps to deploy this solution within your own account.
+lists the steps to deploy this solution within your own account.
 
 ### Diagram
 

@@ -98,4 +98,4 @@ endif::backend-pdf[]
 
 === Version
 
-This documentation was generated on ${build.timestamp} for project version ${project.version} from commit https://github.com/spohnan/lucee-eb-example/commit/${buildNumber}[${buildNumber}^].
+This documentation was generated on ${build.timestamp} for project version ${project.version} from commit https://github.com/ICFI/raptor-devops/commit/${buildNumber}[${buildNumber}^].
