@@ -48,7 +48,8 @@ production in response to code updates.
 
 |===
 * *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. You can find your address
-http://checkip.amazonaws.com[using a number of online pages^], remember to add the /32 at the end to limit to just your address.
+    http://checkip.amazonaws.com[using a number of online pages^], remember to add the /32 at the end to limit to just your address.
+
 * *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
     can be left at their default settings. This access to your account allows CodeDeploy to receive push notifications when
     new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
