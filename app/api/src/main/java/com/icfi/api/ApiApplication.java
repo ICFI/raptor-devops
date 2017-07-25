@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * This class is a 'Hello World' REST API application example to show our expertise of Java, Spring Boot, and DevSecOps.
+ * This class is a 'Hello World' REST API application example to show our
+ * expertise of Java, Spring Boot, and DevSecOps.
  * 
  */
 @Controller
@@ -43,7 +44,8 @@ public class ApiApplication {
 	}
 
 	/**
-	 * Exposes a REST endpoint '/greet' to return a Hello World message to the client.
+	 * Exposes a REST endpoint '/greet' to return a Hello World message to the
+	 * client.
 	 * 
 	 * @return Map response body with message info
 	 */
@@ -72,6 +74,14 @@ public class ApiApplication {
 		return message;
 	}
 
+	/**
+	 * Uses SpringApplication class to bootstrap ApiApplication, starts Spring
+	 * which will start the auto-configured Tomcat web server. Main method
+	 * serves as executable entry point for the application.
+	 * 
+	 * @param String[]
+	 *            args
+	 */
 	public static void main(String[] args) {
 		SpringApplication.run(ApiApplication.class, args);
 	}
