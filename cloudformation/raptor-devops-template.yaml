@@ -100,7 +100,7 @@ Outputs:
     Value: !Sub ${LoadBalancer.Outputs.ServiceUrl}/greet
 
   VersionUrl:
-      Description: Greeting endpoint
+      Description: Version endpoint
       Value: !Sub ${LoadBalancer.Outputs.ServiceUrl}/version
 
   PipelineUrl:

@@ -146,7 +146,7 @@ When finished with the solution follow the steps below to remove all resources p
 
 
 
-=== Documentation Links
+== Documentation Links
 
 ifdef::backend-html5[]
 === icon:file-pdf-o[] pass:[<a href="./raptor-devops.pdf" target="_blank">PDF Version</a>]
