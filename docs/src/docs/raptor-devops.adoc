@@ -26,12 +26,14 @@ image::architecture.png[align="center"]
 * A https://help.github.com/articles/signing-up-for-a-new-github-account/[GitHub Account^]
 * A https://github.com/settings/tokens[GitHub Access Token^] is required to set the repository hook that starts the
     build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
-    https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
+    (screenshot image:screenshot.png[alt=screenshot, link="images/token-scopes.png"^]).
 
 === Steps to Deploy
 
 * *Fork the code repository:* Go the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
-    Fork button in the top right-hand side of the page. This will create a copy of the code in your own account
+    Fork button in the top right-hand side of the page. This will create a copy of the code in your own account. This is needed to
+    test the automation capability we'll push a commit back to this repo to observe the automated build and deployment cycle.
+    (screenshot image:screenshot.png[alt=screenshot, link="images/fork.png"^])
 * *Clone your fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
     the raptor-devops directory. This is the workspace from which you can make changes to see the automated process
     run shortly after you push your commits to GitHub
@@ -39,36 +41,41 @@ image::architecture.png[align="center"]
     stack.
 .CloudFormation Launch Links
 |===
-|Region |Launch Template
+|Region |Launch in Region
 
 |N. Virginia (us-east-1)
-|https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml[launch^]
+a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml"^]
 
 |Ohio (us-east-2)
-|https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-2/raptor-devops-template.yaml[launch^]
+a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-2/raptor-devops-template.yaml"^]
 
 |Oregon (us-west-2)
-|https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml[launch^]
+a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml"^]
 
 |===
-* *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. You can find your address
-    http://checkip.amazonaws.com[using a number of online pages^], remember to add the /32 at the end to limit to just your address.
-* *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
-    can be left at their default settings. This access to your account allows Code Pipeline to receive push notifications when
-    new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
-    https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
-* *Check the Output Links:* After launch of the stack if you look at the CloudFormation console you'll see a number of
-    stacks under creation and eventually reaching the CREATE_COMPLETE status. Click on the parent stack, which has a short name
-    like DevSecOps and look in the Outputs tab to get links to the Pipeline URL to watch the CI/CD process in action and also
-    direct links to the Hello World greeting endpoint and a version endpoint from which you can see that the application
-    was freshly compiled and deployed immediately following the launch of the stack.
-* *Push a Change* Make a change to any of the project code, commit and then push it back to GitHub and shortly thereafter
-    the build and deploy process will automatically restart and if tests pass the application will be redeployed.
+* *CloudFormation Launch Parameters* After clicking the Launch Stack link in the region of your choice you'll be taken through a series
+    of screens that capture any additional information prior to launching the solution stack.
+    ** *Select Template Screen* The correct template has been entered by the launch link so press the Next button to continue to the next screen
+    ** *Specify Details Screen* (screenshot image:screenshot.png[alt=screenshot, link="images/cloudformation-params.png"^])
+        *** *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. Use http://checkip.amazonaws.com[this link^],
+            to find your IP address, remember to add the /32 at the end to limit to just your address example: 10.10.123.123/32
+        *** *Repo* This is the name of your forked repo and can be left with the default value
+        *** *Branch* The master branch can be left with the default value
+        *** *User:* Enter your GitHub username
+        *** *Personal Access Token* This access token you created authorizing Code Pipeline to receive push notifications when
+            new code is pushed. https://github.com/settings/tokens[Token creation^] is accomplished from within your GitHub account
+            and needs to have `repo` and `admin:repo_hook` scopes authorized (screenshot image:screenshot.png[alt=screenshot, link="images/token-scopes.png"^]).
+            Once the token has been created you will have a chance to copy the code and it will then be visible within a list of
+            active tokens within your account (screenshot image:screenshot.png[alt=screenshot, link="images/token-screenshot.png"^])
+
+    ** *Options Screen* Defaults are all fine here, press the Next button to continue to the next screen.
+    ** *Review Screen* All of the captured parameters are listed for review. At the bottom of the screen you'll need to tick the checkbox that
+        acknowledges that CloudFormation will create IAM resources and finally press the Create button to launch the stack.
 
 == Review Deployment
 
 Once the initial five CloudFormation infrastructure stacks have completed deployment navigate to the Outputs tab of the parent
-stack (raptor-devops) and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
+stack (screenshot image:screenshot.png[alt=screenshot, link="images/outputs.png"^]) and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
 three-step process to build and deploy the project.
 
 . Code Pipeline checks out the code from the _forked_ GitHub project and sets a hook so when future commits are pushed the pipeline will
@@ -111,17 +118,19 @@ three-step process to build and deploy the project.
 
 When finished with the solution follow the steps below to remove all resources provisioned.
 
-. *Delete the Web Service* From the CloudFormation console locate the stack that ends in -Service. This is the running application and must be
-    deleted prior to the rest of the stack. Tick the checkbox and then use Actions->Delete Stack to remove
-. *Delete the Stacks* Once the web service stack has been deleted tick the checkbox next to the parent stack, "DevSecOps"
-    and use Actions->Delete Stack to remove
+. *Delete the Service Stack* From the CloudFormation console locate the stack that ends in -Service. This is the running
+    application and must be deleted prior to the rest of the stack. Tick the checkbox and then use Actions->Delete Stack
+    to remove (screenshot image:screenshot.png[alt=screenshot, link="images/outputs.png"^])
+. *Delete the Stacks* Once the web service stack has been deleted tick the checkbox next to the parent stack and use Actions->Delete Stack to remove
 . *Delete the S3 bucket* The bucket containing the build artifacts produced by the CI/CD process
 . *Delete the container repo* The ECR contains the Docker images created by the CI/CD process
 
 == Tools
 
 * Build:
-    ** https://maven.apache.org/[Apache Maven^] is a software project management tool used to build and package the project
+    ** https://maven.apache.org/[Maven^] is a software project management tool used to build and package the project
+    ** https://www.sonarqube.org/[SonarQube^] provides the capability to not only show health of an application but also
+        to highlight issues newly introduced. Used to scan the example application in this project.
 * AWS Provisioning and Deployment:
     ** https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/[Application Load Balancer^] is a load
         balancing option for the Elastic Load Balancing service that operates at the application layer and allows you
