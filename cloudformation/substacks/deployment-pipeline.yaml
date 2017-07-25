@@ -20,14 +20,13 @@ Parameters:
   TemplateBucket:
     Type: String
 
-
 Resources:
   Repository:
-    Type: AWS::ECR::Repository
+    Type: 'AWS::ECR::Repository'
     DeletionPolicy: Retain
 
   CloudFormationExecutionRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     DeletionPolicy: Retain
     Properties:
       Path: /
@@ -52,7 +51,7 @@ Resources:
                   - iam:*
 
   CodeBuildServiceRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -93,7 +92,7 @@ Resources:
                   - ecr:CompleteLayerUpload
 
   CodePipelineServiceRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -128,11 +127,11 @@ Resources:
                   - iam:PassRole
 
   ArtifactBucket:
-    Type: AWS::S3::Bucket
+    Type: 'AWS::S3::Bucket'
     DeletionPolicy: Retain
 
   CodeBuildProject:
-    Type: AWS::CodeBuild::Project
+    Type: 'AWS::CodeBuild::Project'
     Properties:
       Artifacts:
         Location: !Ref ArtifactBucket
@@ -171,7 +170,7 @@ Resources:
       ServiceRole: !Ref CodeBuildServiceRole
 
   Pipeline:
-    Type: AWS::CodePipeline::Pipeline
+    Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStore:
@@ -248,7 +247,6 @@ Resources:
                 - Name: Template
                 - Name: BuildOutput
               RunOrder: 1
-
 
 Outputs:
   PipelineUrl:

@@ -3,6 +3,10 @@ Description: >
   from a GitHub repository via a Docker container to an Amazon EC2 Container Service cluster
 
 Parameters:
+  AllowedIP:
+    Description: The IP addresses allowed to access the application
+    Type: String
+
   GitHubUser:
     Type: String
     Description: Your username on GitHub.
@@ -20,12 +24,13 @@ Parameters:
   GitHubToken:
     Type: String
     NoEcho: true
-    Description: >
-      Token for the user specified above. (https://github.com/settings/tokens)
+    Description: Token for the user specified above. (https://github.com/settings/tokens)
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterLabels:
+      AllowedIP:
+        default: "Allowed IP CIDR"
       GitHubUser:
         default: "User"
       GitHubRepo:
@@ -36,6 +41,10 @@ Metadata:
         default: "Personal Access Token"
     ParameterGroups:
       - Label:
+          default: Security Group Access
+        Parameters:
+          - AllowedIP
+      - Label:
           default: GitHub Configuration
         Parameters:
           - GitHubRepo
@@ -45,18 +54,18 @@ Metadata:
 
 Resources:
   Cluster:
-    Type: AWS::CloudFormation::Stack
+    Type: 'AWS::CloudFormation::Stack'
     Properties:
-      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/ecs-cluster.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/ecs-cluster.yaml'
       Parameters:
         SourceSecurityGroup: !GetAtt LoadBalancer.Outputs.SecurityGroup
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
 
   DeploymentPipeline:
-    Type: AWS::CloudFormation::Stack
+    Type: 'AWS::CloudFormation::Stack'
     Properties:
-      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/deployment-pipeline.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/deployment-pipeline.yaml'
       Parameters:
         Cluster: !GetAtt Cluster.Outputs.ClusterName
         GitHubUser: !Ref GitHubUser
@@ -67,17 +76,18 @@ Resources:
         TemplateBucket: !Sub raptor-devops-deployment-${AWS::Region}
 
   LoadBalancer:
-    Type: AWS::CloudFormation::Stack
+    Type: 'AWS::CloudFormation::Stack'
     Properties:
-      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/load-balancer.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/load-balancer.yaml'
       Parameters:
         Subnets: !GetAtt VPC.Outputs.Subnets
         VpcId: !GetAtt VPC.Outputs.VpcId
+        AllowedIP: !Ref AllowedIP
 
   VPC:
-    Type: AWS::CloudFormation::Stack
+    Type: 'AWS::CloudFormation::Stack'
     Properties:
-      TemplateURL: !Sub https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/vpc.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/raptor-devops-deployment-${AWS::Region}/templates/vpc.yaml'
       Parameters:
         Name: !Ref AWS::StackName
         VpcCIDR: 10.215.0.0/16

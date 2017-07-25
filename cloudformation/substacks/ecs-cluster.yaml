@@ -16,36 +16,18 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
 
-
 Mappings:
   AWSRegionToAMI:
     us-east-1:
-      AMI: ami-6df8fe7a
+      AMI: ami-04351e12
     us-east-2:
-      AMI: ami-c6b5efa3
-    us-west-1:
-      AMI: ami-1eda8d7e
+      AMI: ami-207b5a45
     us-west-2:
-      AMI: ami-a2ca61c2
-    eu-west-1:
-      AMI: ami-ba346ec9
-    eu-west-2:
-      AMI: ami-42c5cf26
-    eu-central-1:
-      AMI: ami-e012d48f
-    ap-northeast-1:
-      AMI: ami-08f7956f
-    ap-southeast-1:
-      AMI: ami-f4832f97
-    ap-southeast-2:
-      AMI: ami-774b7314
-    ca-central-1:
-      AMI: ami-be45f7da
-
+      AMI: ami-ff15039b
 
 Resources:
   ECSRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -60,7 +42,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
 
   InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
+    Type: 'AWS::IAM::InstanceProfile'
     Properties:
       Path: /
       Roles:
@@ -76,12 +58,12 @@ Resources:
       VpcId: !Ref VpcId
 
   Cluster:
-    Type: AWS::ECS::Cluster
+    Type: 'AWS::ECS::Cluster'
     Properties:
       ClusterName: !Ref AWS::StackName
 
   AutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       VPCZoneIdentifier: !Ref Subnets
       LaunchConfigurationName: !Ref LaunchConfiguration
@@ -103,7 +85,7 @@ Resources:
         WaitOnResourceSignals: true
 
   LaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
       AWS::CloudFormation::Init:
         config:
@@ -145,7 +127,6 @@ Resources:
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
-
 
 Outputs:
   ClusterName:

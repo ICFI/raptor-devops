@@ -16,10 +16,9 @@ Parameters:
   Repository:
     Type: String
 
-
 Resources:
   ECSServiceRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -34,7 +33,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
 
   Service:
-    Type: AWS::ECS::Service
+    Type: 'AWS::ECS::Service'
     Properties:
       Cluster: !Ref Cluster
       Role: !Ref ECSServiceRole
@@ -46,7 +45,7 @@ Resources:
           TargetGroupArn: !Ref TargetGroup
 
   TaskDefinition:
-    Type: AWS::ECS::TaskDefinition
+    Type: 'AWS::ECS::TaskDefinition'
     Properties:
       Family: !Sub ${AWS::StackName}-api
       ContainerDefinitions:
