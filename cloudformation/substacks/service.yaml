@@ -1,0 +1,56 @@
+Parameters:
+  Tag:
+    Type: String
+    Default: latest
+
+  DesiredCount:
+    Type: Number
+    Default: 0
+
+  TargetGroup:
+    Type: String
+
+  Cluster:
+    Type: String
+
+  Repository:
+    Type: String
+
+Resources:
+  ECSServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+
+  Service:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref Cluster
+      Role: !Ref ECSServiceRole
+      DesiredCount: !Ref DesiredCount
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: api
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
+
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: !Sub ${AWS::StackName}-api
+      ContainerDefinitions:
+        - Name: api
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
+          Memory: '1024'
+          PortMappings:
+            - ContainerPort: 8080

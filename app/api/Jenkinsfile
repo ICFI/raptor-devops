@@ -1,0 +1,17 @@
+node {
+    stage('checkout') {
+        git url: 'https://github.com/ICFI/raptor-devops.git', branch: 'jenkins'
+    }
+    stage('build') {
+        sh './mvnw -pl app/api verify'
+    }
+    stage('artifacts') {
+        junit 'app/api/target/surefire-reports/**/*.xml'
+    }
+    stage('docker build') {
+        sh 'sudo docker build -t api app/api'
+        sh 'sudo $(aws ecr get-login --no-include-email --region us-east-2)'
+        sh 'sudo docker tag api:latest 443513886313.dkr.ecr.us-east-2.amazonaws.com/api-raptor-devops-dev-devsecops-stack:latest'
+        sh 'sudo docker push 443513886313.dkr.ecr.us-east-2.amazonaws.com/api-raptor-devops-dev-devsecops-stack:latest'
+    }
+}

@@ -69,7 +69,7 @@
                                 <encoding.reporting>UTF-8</encoding.reporting>
                                 <timestamp>${build.timestamp}</timestamp>
                                 <branch>${scmBranch}</branch>
-                                <commit>${buildNumber}</commit>
+                                <!--<commit>${buildNumber}</commit>-->
                             </additionalProperties>
                         </configuration>
                     </execution>
