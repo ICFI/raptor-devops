@@ -60,25 +60,14 @@ production in response to code updates.
 
 ==== Steps to Undeploy
 
+When finished with the solution follow the steps below to remove all resources provisioned.
+
 . *Delete the Web Service* From the CloudFormation console locate the stack that ends in -Service. This is the running application and must be
     deleted prior to the rest of the stack. Tick the checkbox and then use Actions->Delete Stack to remove
 . *Delete the Stacks* Once the web service stack has been deleted tick the checkbox next to the parent stack, "DevSecOps"
     and use Actions->Delete Stack to remove
-. *
-
-
-== Building
-
-=== Prerequisites
-
-* http://www.oracle.com/technetwork/pt/java/javase/downloads/index.html[Java 8 JDK^]: Download from Oracle or
-    use a packaged version for your OS
-* https://git-scm.com/[Git^]: Download the git version control system or use a packaged version for your OS
-
-=== Project
-
-. Execute the command `./mvnw verify` on Mac or Linux or `./mvnw.cmd verify` on Windows
-    ** To build the documentation run with the docs profile activated ex: `./mvnw -P docs -pl docs package`
+. *Delete the S3 bucket* The bucket containing the build artifacts produced by the CI/CD process
+. *Delete the container repo* The ECR contains the Docker images created by the CI/CD process
 
 == Tools
 
