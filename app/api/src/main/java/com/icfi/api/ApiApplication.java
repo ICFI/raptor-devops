@@ -17,44 +17,64 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * This class is a 'Hello World' REST API application example to show our expertise of Java, Spring Boot, and DevSecOps.
+ * 
+ */
 @Controller
 @EnableAutoConfiguration
 public class ApiApplication {
 
-    private static Properties props;
-    private static final Logger logger = LoggerFactory.getLogger(ApiApplication.class);
+	private static Properties props;
+	private static final Logger logger = LoggerFactory.getLogger(ApiApplication.class);
 
-    @PostConstruct
-    public void init() {
-        try {
-            props = PropertiesLoaderUtils.loadProperties(new ClassPathResource("/META-INF/build-info.properties"));
-        } catch (IOException e) {
-            logger.error("Unable to load build.properties");
-            props = new Properties();
-        }
-    }
+	/**
+	 * Initializes all properties for config
+	 * 
+	 */
+	@PostConstruct
+	public void init() {
+		try {
+			props = PropertiesLoaderUtils.loadProperties(new ClassPathResource("/META-INF/build-info.properties"));
+		} catch (IOException e) {
+			logger.error("Unable to load build.properties", e);
+			props = new Properties();
+		}
+	}
 
-    @RequestMapping(value = {"/greet"}, method = RequestMethod.GET)
-    public @ResponseBody
-    Map greet() {
-        return new HashMap<String, String>() {{
-            put("greeting", "Hello World");
-        }};
-    }
+	/**
+	 * Exposes a REST endpoint '/greet' to return a Hello World message to the client.
+	 * 
+	 * @return Map response body with message info
+	 */
+	@RequestMapping(value = { "/greet" }, method = RequestMethod.GET)
+	public @ResponseBody Map<String, String> greet() {
+		Map<String, String> message = new HashMap<String, String>();
 
-    @RequestMapping(value = {"/", "/version"}, method = RequestMethod.GET)
-    public @ResponseBody
-    Map version() {
-        return new HashMap<String, String>() {{
-            put("name", props.getProperty("build.artifact"));
-            put("version", props.getProperty("build.version"));
-            put("branch", props.getProperty("build.branch"));
-            put("commit", props.getProperty("build.commit"));
-            put("timestamp", props.getProperty("build.time"));
-        }};
-    }
+		message.put("greeting", "Hello World");
 
-    public static void main(String[] args) {
-        SpringApplication.run(ApiApplication.class, args);
-    }
+		return message;
+	}
+
+	/**
+	 * Exposes a REST endpoint '/' to return applicaiton build info to the client.
+	 * 
+	 * @return Map response body with message info
+	 */
+	@RequestMapping(value = { "/", "/version" }, method = RequestMethod.GET)
+	public @ResponseBody Map<String, String> version() {
+		Map<String, String> message = new HashMap<String, String>();
+
+		message.put("name", props.getProperty("build.artifact"));
+		message.put("version", props.getProperty("build.version"));
+		message.put("branch", props.getProperty("build.branch"));
+		message.put("commit", props.getProperty("build.commit"));
+		message.put("timestamp", props.getProperty("build.time"));
+
+		return message;
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(ApiApplication.class, args);
+	}
 }
