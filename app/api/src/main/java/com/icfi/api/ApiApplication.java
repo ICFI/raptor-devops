@@ -57,7 +57,7 @@ public class ApiApplication {
 	}
 
 	/**
-	 * Exposes a REST endpoint '/' to return applicaiton build info to the client.
+	 * Exposes a REST endpoint '/' to return application build info to the client.
 	 * 
 	 * @return Map response body with message info
 	 */
@@ -67,8 +67,6 @@ public class ApiApplication {
 
 		message.put("name", props.getProperty("build.artifact"));
 		message.put("version", props.getProperty("build.version"));
-		message.put("branch", props.getProperty("build.branch"));
-		message.put("commit", props.getProperty("build.commit"));
 		message.put("timestamp", props.getProperty("build.time"));
 
 		return message;
