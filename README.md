@@ -11,3 +11,5 @@ The [instructions and extended documentation](https://s3.us-east-2.amazonaws.com
 of the solution lists the steps to deploy this solution within your own account.
 
 ### Diagram
+
+![architecture](https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/architecture.png)
