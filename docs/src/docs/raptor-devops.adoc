@@ -5,13 +5,17 @@ ifdef::backend-pdf[]
 endif::backend-pdf[]
 
 ifdef::backend-html5[]
-image::icf-logo.png[ICF Logo, 150, 150, float="left"]
+image:icf-logo.png[ICF Logo, 150, 150, float="left"]
 endif::backend-html5[]
 
 == Overview
 
 This project demonstrates an automated process to deploy an environment to AWS that will push updates into
 production in response to code updates.
+
+== Diagram
+
+image::architecture.png[align="center"]
 
 == Deployment
 
@@ -24,10 +28,10 @@ production in response to code updates.
     build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
     https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
 
-==== Steps to Deploy
+=== Steps to Deploy
 
-* *Fork the code respository:* Go the the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
-    Fork button in the top right hand side of the page. This will create a copy of the code in your own account
+* *Fork the code repository:* Go the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
+    Fork button in the top right-hand side of the page. This will create a copy of the code in your own account
 * *Clone your fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
     the raptor-devops directory. This is the workspace from which you can make changes to see the automated process
     run shortly after you push your commits to GitHub
@@ -49,12 +53,10 @@ production in response to code updates.
 |===
 * *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. You can find your address
     http://checkip.amazonaws.com[using a number of online pages^], remember to add the /32 at the end to limit to just your address.
-
 * *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
-    can be left at their default settings. This access to your account allows CodeDeploy to receive push notifications when
+    can be left at their default settings. This access to your account allows Code Pipeline to receive push notifications when
     new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
     https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
-
 * *Check the Output Links:* After launch of the stack if you look at the CloudFormation console you'll see a number of
     stacks under creation and eventually reaching the CREATE_COMPLETE status. Click on the parent stack, which has a short name
     like DevSecOps and look in the Outputs tab to get links to the Pipeline URL to watch the CI/CD process in action and also
@@ -63,41 +65,40 @@ production in response to code updates.
 * *Push a Change* Make a change to any of the project code, commit and then push it back to GitHub and shortly thereafter
     the build and deploy process will automatically restart and if tests pass the application will be redeployed.
 
-==== Review Deployment
+== Review Deployment
 
-Once the initial 5 CloudFormation infrastructure stacks have completed deployment navigate to the Outputs tab of the parent
+Once the initial five CloudFormation infrastructure stacks have completed deployment navigate to the Outputs tab of the parent
 stack (raptor-devops) and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
-three step process to build and deploy the project.
+three-step process to build and deploy the project.
 
-. CodePipeline checks out the code from the _forked_ GitHub project and sets a hook so when future commits are pushed the pipeline will
+. Code Pipeline checks out the code from the _forked_ GitHub project and sets a hook so when future commits are pushed the pipeline will
     be notified.
-. CodePipeline next uses a CodeBuild project build and package the api application artifact
+. Code Pipeline next uses a Code Build project build and package the api application artifact
     ** Compiles the code into a war file using a Docker container
-    ** Creates a Docker image containing the application for use wen deploying to ECS
+    ** Creates a Docker image containing the application for use when deploying to ECS
     ** Pushes the application to ECR, which we're using to host our private container images
 
-        phases:
-            pre_build:
-              commands:
-                - $(aws ecr get-login)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-            build:
-              commands:
-                - docker run --rm -v "$(pwd)":/tmp/api -w /tmp/api maven:3.5-jdk-8 mvn -pl app/api verify
-                - docker build -t api app/api
-                - docker tag api:latest "${REPOSITORY_URI}:${TAG}"
-            post_build:
-              commands:
-                - docker push "${REPOSITORY_URI}:${TAG}"
+        pre_build:
+          commands:
+            - $(aws ecr get-login)
+            - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+        build:
+          commands:
+            - docker run --rm -v "$(pwd)":/tmp/api -w /tmp/api maven:3.5-jdk-8 mvn -pl app/api verify
+            - docker build -t api app/api
+            - docker tag api:latest "${REPOSITORY_URI}:${TAG}"
+        post_build:
+          commands:
+            - docker push "${REPOSITORY_URI}:${TAG}"
 
-. The last step is CodePipeline pulls the newly created application container image from ECR and either deploys
+. The last step is Code Pipeline pulls the newly created application container image from ECR and either deploys
     the CloudFormation service stack that launches the api or if already deployed performs an update to launch
-    the version that corresponds with the lastest code commit.
-. Once the CodePipeline has completed the first deployment you'll be able to use the other two links listed in the
+    the version that corresponds with the latest code commit.
+. Once the Code Pipeline has completed the first deployment you'll be able to use the other two links listed in the
     Outputs tab to view the deployed application.
     ** *GreetingUrl:* This link is to the `/greet` endpoint of the api application deployed as a container within ECS.
         The output is in json format as the application function is that as an api providing information to possibly
-        many different front end UIs.
+        many different front-end UIs.
     ** *VersionUrl:* When the application is built timestamp and other information is captured and written into the
         final artifact to allow for version information to be discoverable. Notice that the timestamp shows that
         the application was just built on demand when you launched the stack.
@@ -106,7 +107,7 @@ three step process to build and deploy the project.
     which can be followed from the *PipelineURL* link. Verify the redeployment by checking the timestamp of the api
     application again after the pipeline completes.
 
-==== Steps to Undeploy
+== Steps to Undeploy
 
 When finished with the solution follow the steps below to remove all resources provisioned.
 
@@ -143,14 +144,10 @@ When finished with the solution follow the steps below to remove all resources p
 * Documentation:
     ** http://asciidoctor.org[AsciiDoctor^] markup and transformation is used to create the documentation
 
-=== Diagram
 
-image::architecture.png[align="center"]
 
 === Documentation Links
-////
-PDF Generation gives an error if you try to use icons
-////
+
 ifdef::backend-html5[]
 === icon:file-pdf-o[] pass:[<a href="./raptor-devops.pdf" target="_blank">PDF Version</a>]
 === icon:file-code-o[] https://github.com/ICFI/raptor-devops[Source^]
