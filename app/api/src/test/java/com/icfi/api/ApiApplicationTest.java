@@ -9,6 +9,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import ch.qos.logback.classic.Logger;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,7 +23,7 @@ public class ApiApplicationTest {
     private MockMvc mvc;
 
     @Test
-    public void testGreeting() throws Exception {
+    public void testGreeting() throws Exception{
         this.mvc.perform(get("/greet").accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk());
     }
@@ -29,6 +31,12 @@ public class ApiApplicationTest {
     @Test
     public void testVersion() throws Exception {
         this.mvc.perform(get("/version").accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk());
+    }
+    
+    @Test
+    public void testRoot() throws Exception {
+        this.mvc.perform(get("/").accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk());
     }
 
