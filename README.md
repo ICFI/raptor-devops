@@ -2,10 +2,14 @@
 
 ### Overview
 
-### Initial Setup
+This project demonstrates an automated process to deploy an environment to AWS that will push updates into
+production in response to code updates.
 
-* Ensure Java JDK has been installed
-* Clone this repository and cd into the top level directory
-    * `git clone https://github.com/ICFI/raptor-devops; cd raptor-devops`
-* Run `./mvnw -P docs verify` to build docs and applications
-* Review extended documentation in the `docs/target/generated-docs` folder
+### Documentation
+
+The [instructions and extended documentation](https://s3.us-east-2.amazonaws.com/raptor-devops-deployment-us-east-2/docs/index.html) 
+lists the steps to deploy this solution within your own account.
+
+### Diagram
+
+![architecture](https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/architecture.png)

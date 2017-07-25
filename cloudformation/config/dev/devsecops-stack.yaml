@@ -1,6 +1,0 @@
-template_path: templates/devsecops-stack.yaml
-parameters:
-  AvailabilityZones: us-east-2a,us-east-2b
-  AllowedIP: {{ var.allowed_ip_cidr }}
-  KeyPair: raptor
-  Version: {{ var.version }}
