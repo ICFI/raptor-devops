@@ -10,68 +10,75 @@ endif::backend-html5[]
 
 == Overview
 
-This project demonstrates an automated process to deploy a CI/CD environment with several project build quality and
-security tools incorporated.
+This project demonstrates an automated process to deploy an environment to AWS that will push updates into
+production in response to code updates.
+
+== Deployment
+
+=== Prerequisites
+
+* An AWS account with administrative privileges as the solution creates IAM roles for the service
+* https://git-scm.com/[Git^]: Download the git version control system or use a packaged version for your OS
+* A https://help.github.com/articles/signing-up-for-a-new-github-account/[GitHub Account^]
+* A https://github.com/settings/tokens[GitHub Access Token^] is required to set the repository hook that starts the
+    build and deploy process immediately after new code commits have been pushed
+
+==== Steps to Deploy
+
+* *Fork the code respository:* Go the the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
+    Fork button in the top right hand side of the page. This will create a copy of the code in your own account
+* *Clone the fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
+    the raptor-devops directory. This is the workspace from which you can make changes to see the automated process
+    run shortly after you push your commits to GitHub
+* *Launch the CloudFormation Stack:* Log into your AWS account and then use one of the links below to launch the CloudFormation
+    stack.
+.CloudFormation Launch Links
+|===
+|Region |Launch Template
+
+|N. Virginia (us-east-1)
+|https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml[launch^]
+
+|Ohio (us-east-2)
+|https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-2/raptor-devops-template.yaml[launch^]
+
+|Oregon (us-west-2)
+|https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml[launch^]
+
+|===
+* *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
+    can be left at their default settings. This access to your account allows CodeDeploy to receive push notifications when
+    new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized.
+
+* *Check the Output Links:* After launch of the stack if you look at the CloudFormation console you'll see a number of
+    stacks under creation and eventually reaching the CREATE_COMPLETE status. Click on the parent stack, which has a short name
+    like DevSecOps and look in the Outputs tab to get links to the Pipeline URL to watch the CI/CD process in action and also
+    direct links to the Hello World greeting endpoint and a version endpoint from which you can see that the application
+    was freshly compiled and deployed immediately following the launch of the stack.
+* *Push a Change* Make a change to any of the project code, commit and then push it back to GitHub and shortly thereafter
+    the build and deploy process will automatically restart and if tests pass the application will be redeployed.
+
+==== Steps to Undeploy
+
+. *Delete the Web Service* From the CloudFormation console locate the stack that ends in -Service. This is the running application and must be
+    deleted prior to the rest of the stack. Tick the checkbox and then use Actions->Delete Stack to remove
+. *Delete the Stacks* Once the web service stack has been deleted tick the checkbox next to the parent stack, "DevSecOps"
+    and use Actions->Delete Stack to remove
+. *
+
 
 == Building
 
-=== Prerequisite
+=== Prerequisites
 
 * http://www.oracle.com/technetwork/pt/java/javase/downloads/index.html[Java 8 JDK^]: Download from Oracle or
     use a packaged version for your OS
+* https://git-scm.com/[Git^]: Download the git version control system or use a packaged version for your OS
 
 === Project
 
 . Execute the command `./mvnw verify` on Mac or Linux or `./mvnw.cmd verify` on Windows
     ** To build the documentation run with the docs profile activated ex: `./mvnw -P docs -pl docs package`
-
-== Deployment
-
-=== Using Sceptre
-
-This is an optional tool to deploy the solution as the `cloudformation/templates/devsecops-stack.yaml` template
-can be uploaded directly to the CloudFormation console if desired. Sceptre makes deployments via the CLI much easier
-and is the recommended approach. To gather the needed information and pass arguments to the tool a Makefile has also
-been included at the root of the project so deployments can be as easy as `make [create|update|delete]` Sceptre is a
-Python tool and can be installed using pip.
-
-==== Prerequisites (recommended)
-
-. Python 2.7.x
-. AWS CLI (http://docs.aws.amazon.com/cli/latest/userguide/installing.html[install] and
-http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html[configuration] instructions)
-. Make
-
-==== Steps
-
-. Ensure that the `make` application has been installed on your system
-    ** If you don't want to use make it's just a convenience layer over a number of single line commands which could
-    certainly be called individually if desired.
-. Execute the `make init` target which will install virtualenv and initialize Python dependencies in an isolated environment
-    for this project.
-. Activate the environment by running the command `source deploy/bin/activate`
-. Review the configuration settings in `cloudformation/config/dev` if different region and availability zones are desired
-. The commands to work with CloudFormation are now `make [create|update|delete|outputs|validate]`
-    ** Updates to the template can be syntax checked with the command `make validate`
-. Once the stack has reached the CREATE_COMPLETE status the outputs can be retrieved with `make outputs`
-
-_Example `make outputs` display after stack creation with `make create` command_
-```shell
-$ make outputs
-- Description: The DNS name of the load balancer
-  OutputKey: LoadBalancerDNSName
-  OutputValue: rapto-LoadB-1T5ZNMXZZQVK9-1192740135.us-east-2.elb.amazonaws.com // <1>
-- Description: Stack version
-  OutputKey: Version
-  OutputValue: 0.0.1-SNAPSHOT
-```
-<1> Copy this into your web browser
-
-== Container Images
-
-=== jenkins-ecs
-
-=== jenkins-demo
 
 == Tools
 
@@ -85,8 +92,6 @@ $ make outputs
     ** https://aws.amazon.com/cloudformation/[AWS CloudFormation^] gives developers and systems administrators an easy way to
         create and manage a collection of related AWS resources, provisioning and updating them in an orderly and predictable
         fashion.
-    ** https://sceptre.cloudreach.com[Sceptre^] is a tool to drive Cloudformation. Sceptre manages the creating, updating and
-        deletion of stacks, and provides meta commands to allow users to get information about their stacks.
 * Documentation:
     ** http://asciidoctor.org[AsciiDoctor^] markup and transformation is used to create the documentation
 
