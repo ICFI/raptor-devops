@@ -24,16 +24,14 @@ production in response to code updates.
     build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
     https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
 
-
-
 ==== Steps to Deploy
 
 * *Fork the code respository:* Go the the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
     Fork button in the top right hand side of the page. This will create a copy of the code in your own account
-* *Clone the fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
+* *Clone your fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
     the raptor-devops directory. This is the workspace from which you can make changes to see the automated process
     run shortly after you push your commits to GitHub
-* *Launch the CloudFormation Stack:* Log into your AWS account and then use one of the links below to launch the CloudFormation
+* *Launch the CloudFormation Stack:* Log into the AWS account and then use one of the links below to launch the CloudFormation
     stack.
 .CloudFormation Launch Links
 |===
@@ -49,6 +47,8 @@ production in response to code updates.
 |https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml[launch^]
 
 |===
+* *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. You can find your address
+http://checkip.amazonaws.com[using a number of online pages^], remember to add the /32 at the end to limit to just your address.
 * *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
     can be left at their default settings. This access to your account allows CodeDeploy to receive push notifications when
     new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
@@ -61,6 +61,49 @@ production in response to code updates.
     was freshly compiled and deployed immediately following the launch of the stack.
 * *Push a Change* Make a change to any of the project code, commit and then push it back to GitHub and shortly thereafter
     the build and deploy process will automatically restart and if tests pass the application will be redeployed.
+
+==== Review Deployment
+
+Once the initial 5 CloudFormation infrastructure stacks have completed deployment navigate to the Outputs tab of the parent
+stack (raptor-devops) and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
+three step process to build and deploy the project.
+
+. CodePipeline checks out the code from the _forked_ GitHub project and sets a hook so when future commits are pushed the pipeline will
+    be notified.
+. CodePipeline next uses a CodeBuild project build and package the api application artifact
+    ** Compiles the code into a war file using a Docker container
+    ** Creates a Docker image containing the application for use wen deploying to ECS
+    ** Pushes the application to ECR, which we're using to host our private container images
+
+        phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+            build:
+              commands:
+                - docker run --rm -v "$(pwd)":/tmp/api -w /tmp/api maven:3.5-jdk-8 mvn -pl app/api verify
+                - docker build -t api app/api
+                - docker tag api:latest "${REPOSITORY_URI}:${TAG}"
+            post_build:
+              commands:
+                - docker push "${REPOSITORY_URI}:${TAG}"
+
+. The last step is CodePipeline pulls the newly created application container image from ECR and either deploys
+    the CloudFormation service stack that launches the api or if already deployed performs an update to launch
+    the version that corresponds with the lastest code commit.
+. Once the CodePipeline has completed the first deployment you'll be able to use the other two links listed in the
+    Outputs tab to view the deployed application.
+    ** *GreetingUrl:* This link is to the `/greet` endpoint of the api application deployed as a container within ECS.
+        The output is in json format as the application function is that as an api providing information to possibly
+        many different front end UIs.
+    ** *VersionUrl:* When the application is built timestamp and other information is captured and written into the
+        final artifact to allow for version information to be discoverable. Notice that the timestamp shows that
+        the application was just built on demand when you launched the stack.
+. Make a change, commit and push in the local repo we cloned right after forking the project. We've authorized
+    GitHub to notify CodePipeline when new code is pushed so this should trigger a redeployment of the api application
+    which can be followed from the *PipelineURL* link. Verify the redeployment by checking the timestamp of the api
+    application again after the pipeline completes.
 
 ==== Steps to Undeploy
 
@@ -75,18 +118,33 @@ When finished with the solution follow the steps below to remove all resources p
 
 == Tools
 
-* Project Build and Packaging:
+* Build:
     ** https://maven.apache.org/[Apache Maven^] is a software project management tool used to build and package the project
-*Application Platform:
-    ** https://aws.amazon.com/ecs/[AWS EC2 Container Service^] is a highly scalable, high performance container
+* AWS Provisioning and Deployment:
+    ** https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/[Application Load Balancer^] is a load
+        balancing option for the Elastic Load Balancing service that operates at the application layer and allows you
+        to define routing rules based on content across multiple services or containers running on one or more Amazon
+        Elastic Compute Cloud (Amazon EC2) instances.
+    ** https://aws.amazon.com/autoscaling/[Auto Scaling^] helps you maintain application availability and allows you to
+        dynamically scale your Amazon EC2 capacity up or down automatically according to conditions you define.
+    ** https://aws.amazon.com/ecr/[(ECR) EC2 Container Registry^] is a fully-managed Docker container registry that makes
+        it easy for developers to store, manage, and deploy Docker container images.
+    ** https://aws.amazon.com/ecs/[(ECS) EC2 Container Service^] is a highly scalable, high performance container
         management service that supports Docker containers and allows you to easily run applications on a managed
         cluster of Amazon EC2 instances.
-* Deployment Orchestration
-    ** https://aws.amazon.com/cloudformation/[AWS CloudFormation^] gives developers and systems administrators an easy way to
+    ** https://aws.amazon.com/cloudformation/[CloudFormation^] gives developers and systems administrators an easy way to
         create and manage a collection of related AWS resources, provisioning and updating them in an orderly and predictable
         fashion.
+    ** https://aws.amazon.com/codebuild/[Code Build^] is a fully managed build service that compiles source code, runs
+        tests, and produces software packages that are ready to deploy.
+    ** https://aws.amazon.com/codepipeline/[Code Pipeline^] is a continuous integration and continuous delivery service
+        for fast and reliable application and infrastructure updates.
 * Documentation:
     ** http://asciidoctor.org[AsciiDoctor^] markup and transformation is used to create the documentation
+
+=== Diagram
+
+image::architecture.png[align="center"]
 
 === Documentation Links
 ////
