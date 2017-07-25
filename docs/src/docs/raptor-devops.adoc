@@ -21,7 +21,10 @@ production in response to code updates.
 * https://git-scm.com/[Git^]: Download the git version control system or use a packaged version for your OS
 * A https://help.github.com/articles/signing-up-for-a-new-github-account/[GitHub Account^]
 * A https://github.com/settings/tokens[GitHub Access Token^] is required to set the repository hook that starts the
-    build and deploy process immediately after new code commits have been pushed
+    build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
+    https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
+
+
 
 ==== Steps to Deploy
 
@@ -48,7 +51,8 @@ production in response to code updates.
 |===
 * *Enter Your Account Info:* Enter your GitHub username and Personal Access Token as parameters to the stack. All other params
     can be left at their default settings. This access to your account allows CodeDeploy to receive push notifications when
-    new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized.
+    new code is pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
+    https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot)^].
 
 * *Check the Output Links:* After launch of the stack if you look at the CloudFormation console you'll see a number of
     stacks under creation and eventually reaching the CREATE_COMPLETE status. Click on the parent stack, which has a short name
