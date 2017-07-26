@@ -25,16 +25,17 @@ image::architecture.png[link=images/architecture.png]
 * https://git-scm.com/[Git^]: Download the git version control system or use a packaged version for your OS
 * A https://help.github.com/articles/signing-up-for-a-new-github-account/[GitHub Account^]
 * A https://github.com/settings/tokens[GitHub Access Token^] is required to set the repository hook that starts the
-    build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and `admin:repo_hook` scopes authorized
-    icon:camera-retro[link=images/token-scopes.png, size=2x, title=screenshot]. More information about tokens is
-    available from https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[GitHub Help^]
+    build and deploy process immediately after new code commits have been pushed. The token needs to have `repo` and
+    `admin:repo_hook` scopes authorized. More information about creating an access token is available from
+    https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/[GitHub Help^]
+    https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot icon:camera-retro[link=images/token-scopes.png, size=2x, title=screenshot] )]
 
 === Steps to Deploy
 
 * *Fork the code repository:* Go the https://github.com/ICFI/raptor-devops[GitHub repository web page^] for this project and click the
     Fork button in the top right-hand side of the page. This will create a copy of the code in your own account and will be needed to
     test the automation hook. After the deployment has completed we'll push a new code commit to observe the automated build
-    and deployment cycle icon:camera-retro[link=images/fork.png, size=2x, title=screenshot].
+    and deployment cycle https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/fork.png[(screenshot icon:camera-retro[link=images/fork.png, size=2x, title=screenshot] )].
 * *Clone your fork:* Run the command `git clone https://github.com/YOUR_GITHUB_USERNAME/raptor-devops` and change into
     the raptor-devops directory. This is the workspace from which you will make changes to see the automated process
     run shortly after you push your commits to GitHub
@@ -58,7 +59,7 @@ a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?reg
 * *CloudFormation Launch Parameters* After clicking the Launch Stack link in the region of your choice you'll be taken through a series
     of screens that capture any additional information prior to launching the solution stack.
     ** *Select Template Screen* The correct template has been entered by the launch link so press the Next button to continue to the next screen
-    ** *Specify Details Screen* icon:camera-retro[link=images/cloudformation-params.png, size=2x, title=screenshot]
+    ** *Specify Details Screen* https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/cloudformation-params.png[(screenshot icon:camera-retro[link=images/cloudformation-params.png, size=2x, title=screenshot] )]
         *** *Restrict Access* Enter the allowed IP addresses that will be able to access the solution. Use http://checkip.amazonaws.com[this link^],
             to find your IP address, remember to add the /32 at the end to limit to just your address example: 10.10.123.123/32
         *** *Repo* This is the name of your forked repo and can be left with the default value
@@ -66,9 +67,9 @@ a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?reg
         *** *User:* Enter your GitHub username
         *** *Personal Access Token* The access token you created authorizing Code Pipeline to receive notification when
             new code is pushed. https://github.com/settings/tokens[Token creation^] is accomplished from within your GitHub account
-            and needs to have `repo` and `admin:repo_hook` scopes authorized icon:camera-retro[link=images/token-scopes.png, size=2x, title=screenshot].
+            and needs to have `repo` and `admin:repo_hook` scopes authorized https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-scopes.png[(screenshot icon:camera-retro[link=images/token-scopes.png, size=2x, title=screenshot] )].
             Once the token has been created you will have a chance to copy the code and it will then be visible within a list of
-            active tokens within your account icon:camera-retro[link=images/token-screenshot.png, size=2x, title=screenshot]
+            active tokens within your account https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/token-screenshot.png[(screenshot icon:camera-retro[link=images/token-screenshot.png, size=2x, title=screenshot] )]
 
     ** *Options Screen* Defaults are all fine here, press the Next button to continue to the next screen.
     ** *Review Screen* All of the captured parameters are listed for review. At the bottom of the screen you'll need to tick the checkbox that
@@ -77,8 +78,8 @@ a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?reg
 == Review Deployment
 
 Once the initial five CloudFormation infrastructure stacks have completed deployment navigate to the Outputs tab of the parent
-stack icon:camera-retro[link=images/outputs.png, size=2x, title=screenshot] and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
-three-step process to build and deploy the project.
+stack and open the *PipelineURL* link to watch the CI/CD process in action. Code Pipeline performs a
+three-step process to build and deploy the project. https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/outputs.png[(screenshot icon:camera-retro[link=images/outputs.png, size=2x, title=screenshot] )]
 
 . Code Pipeline checks out the code from your forked GitHub project and sets a hook so when future commits are pushed the pipeline will
     be notified.
@@ -122,7 +123,7 @@ When finished with the solution follow the steps below to remove all resources p
 
 . *Delete the Service Stack* From the CloudFormation console locate the stack that ends in -Service. This is the running
     application and must be deleted prior to the rest of the stack. Tick the checkbox and then use Actions->Delete Stack
-    to remove icon:camera-retro[link=images/outputs.png, size=2x, title=screenshot]
+    to remove https://github.com/ICFI/raptor-devops/raw/master/docs/src/docs/images/outputs.png[(screenshot icon:camera-retro[link=images/outputs.png, size=2x, title=screenshot] )]
 . *Delete the Stacks* Once the web service stack has been deleted tick the checkbox next to the parent stack and use Actions->Delete Stack to remove
 . *Delete the S3 bucket* The bucket containing the build artifacts produced by the CI/CD process
 . *Delete the container repo* The ECR contains the Docker images created by the CI/CD process
