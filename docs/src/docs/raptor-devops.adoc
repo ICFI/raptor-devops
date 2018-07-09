@@ -46,14 +46,8 @@ image::architecture.png[link=images/architecture.png]
 |===
 |Region |Launch Stack in Region
 
-|N. Virginia (us-east-1)
-a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml"^]
-
 |Ohio (us-east-2)
 a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-2/raptor-devops-template.yaml"^]
-
-|Oregon (us-west-2)
-a|image::launch.png[link="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=raptor-devops&templateURL=https://s3.amazonaws.com/raptor-devops-deployment-us-east-1/raptor-devops-template.yaml"^]
 
 |===
 * *CloudFormation Launch Parameters* After clicking the Launch Stack link in the region of your choice you'll be taken through a series

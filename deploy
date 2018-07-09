@@ -4,9 +4,7 @@ set -o errexit -o xtrace
 
 bucket=raptor-devops-deployment
 regions=(
-  us-east-1
   us-east-2
-  us-west-2
 )
 
 BUILD_DIR=build
